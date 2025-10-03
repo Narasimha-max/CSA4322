@@ -1,0 +1,65 @@
+DATABASE
+CREATE DATABASE bus_db;
+
+USE bus_db;
+
+CREATE TABLE buses (
+    bus_id INT AUTO_INCREMENT PRIMARY KEY,
+    bus_type VARCHAR(50),
+    total_seats INT,
+    available_seats INT,
+    route VARCHAR(100)
+);
+
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50),
+    password VARCHAR(255)
+);
+
+CREATE TABLE bookings (
+    booking_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    bus_id INT,
+    seat_no INT,
+    travel_date DATE,
+    FOREIGN KEY(user_id) REFERENCES users(user_id),
+    FOREIGN KEY(bus_id) REFERENCES buses(bus_id)
+);
+bus.php:
+<?php
+$conn = new mysqli("localhost","root","","bus_db");
+if($conn->connect_error){ die("Connection failed: ".$conn->connect_error); }
+
+$buses = [];
+if(isset($_GET['search'])){
+    $route = $_GET['route'];
+    $sql = "SELECT * FROM buses WHERE route LIKE '%$route%' AND available_seats>0";
+    $result = $conn->query($sql);
+    if($result->num_rows>0){ while($r=$result->fetch_assoc()){ $buses[]=$r; } }
+}
+?>
+<!DOCTYPE html>
+<html>
+<head><title>Bus Booking</title></head>
+<body>
+<h2>Search Buses</h2>
+<form method="GET">
+Route: <input type="text" name="route" required>
+<input type="submit" name="search" value="Search">
+</form>
+
+<h3>Available Buses</h3>
+<table border="1">
+<tr><th>Bus Type</th><th>Total Seats</th><th>Available Seats</th><th>Route</th></tr>
+<?php foreach($buses as $b){ ?>
+<tr>
+<td><?php echo $b['bus_type']; ?></td>
+<td><?php echo $b['total_seats']; ?></td>
+<td><?php echo $b['available_seats']; ?></td>
+<td><?php echo $b['route']; ?></td>
+</tr>
+<?php } ?>
+</table>
+</body>
+</html>

@@ -1,0 +1,96 @@
+ATABASE:
+CREATE DATABASE cake_db;
+USE cake_db;
+
+-- Users Table
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50),
+    password VARCHAR(255),
+    email VARCHAR(100)
+);
+
+-- Admin Table
+CREATE TABLE admin (
+    admin_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50),
+    password VARCHAR(255)
+);
+
+-- Cake Products Table
+CREATE TABLE cakes (
+    cake_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100),
+    category VARCHAR(50),
+    sub_category VARCHAR(50),
+    flavor VARCHAR(50),
+    occasion VARCHAR(50),
+    price DECIMAL(10,2),
+    stock INT,
+    description TEXT,
+    image VARCHAR(255)
+);
+
+-- Orders Table
+CREATE TABLE orders (
+    order_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    cake_id INT,
+    quantity INT,
+    shipping_address VARCHAR(255),
+    status VARCHAR(50) DEFAULT 'Pending',
+    order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY(user_id) REFERENCES users(user_id),
+    FOREIGN KEY(cake_id) REFERENCES cakes(cake_id)
+);
+cake.php
+<?php
+$conn = new mysqli("localhost","root","","cake_db");
+if($conn->connect_error){ die("DB Connection failed: ".$conn->connect_error); }
+
+// Example logged-in user
+$user_id = 1;
+
+// Add cake to order/cart
+if(isset($_POST['order'])){
+    $cake_id = $_POST['cake_id'];
+    $quantity = $_POST['quantity'];
+    $address = $_POST['shipping_address'];
+    $conn->query("INSERT INTO orders(user_id, cake_id, quantity, shipping_address) VALUES($user_id,$cake_id,$quantity,'$address')");
+    $msg = "Order placed successfully!";
+}
+
+// Fetch cakes
+$cakes = $conn->query("SELECT * FROM cakes");
+?>
+<!DOCTYPE html>
+<html>
+<head><title>Buy a Cake</title></head>
+<body>
+<h2>Online Cake Store</h2>
+<?php if(isset($msg)) echo "<p>$msg</p>"; ?>
+<table border="1">
+<tr><th>Image</th><th>Name</th><th>Category</th><th>Flavor</th><th>Occasion</th><th>Price</th><th>Stock</th><th>Order</th></tr>
+<?php while($cake = $cakes->fetch_assoc()){ ?>
+<tr>
+<td><img src="<?php echo $cake['image']; ?>" width="100"></td>
+<td><?php echo $cake['name']; ?></td>
+<td><?php echo $cake['category']; ?></td>
+<td><?php echo $cake['flavor']; ?></td>
+<td><?php echo $cake['occasion']; ?></td>
+<td><?php echo $cake['price']; ?></td>
+<td><?php echo $cake['stock']; ?></td>
+<td>
+<form method="POST">
+<input type="hidden" name="cake_id" value="<?php echo $cake['cake_id']; ?>">
+Quantity: <input type="number" name="quantity" min="1" max="<?php echo $cake['stock']; ?>" required><br>
+Shipping Address: <input type="text" name="shipping_address" required><br>
+<input type="submit" name="order" value="Place Order">
+</form>
+</td>
+</tr>
+<?php } ?>
+</table>
+</body>
+</html>
+

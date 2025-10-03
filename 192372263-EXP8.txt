@@ -1,0 +1,79 @@
+DATABASE:
+CREATE DATABASE hospital_db;
+USE hospital_db;
+
+CREATE TABLE patients (
+    patient_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50),
+    email VARCHAR(100),
+    password VARCHAR(255)
+);
+
+CREATE TABLE doctors (
+    doctor_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50),
+    specialty VARCHAR(50)
+);
+
+CREATE TABLE appointments (
+    appointment_id INT AUTO_INCREMENT PRIMARY KEY,
+    patient_id INT,
+    doctor_id INT,
+    date DATE,
+    time TIME,
+    status VARCHAR(20) DEFAULT 'Pending',
+    FOREIGN KEY(patient_id) REFERENCES patients(patient_id),
+    FOREIGN KEY(doctor_id) REFERENCES doctors(doctor_id)
+);
+HOSPiTAL.php
+<?php
+$conn = new mysqli("localhost","root","","hospital_db");
+if($conn->connect_error){ die("DB connection failed: ".$conn->connect_error); }
+
+$doctors = $conn->query("SELECT * FROM doctors");
+
+// Booking
+if(isset($_POST['book'])){
+    $patient_id = 1; // example patient
+    $doctor_id = $_POST['doctor_id'];
+    $date = $_POST['date'];
+    $time = $_POST['time'];
+    $conn->query("INSERT INTO appointments(patient_id, doctor_id, date, time) VALUES($patient_id,$doctor_id,'$date','$time')");
+    $msg = "Appointment booked!";
+}
+
+// Show appointments
+$appointments = $conn->query("SELECT a.*, d.name as doctor_name FROM appointments a JOIN doctors d ON a.doctor_id=d.doctor_id");
+?>
+<!DOCTYPE html>
+<html>
+<head><title>Hospital Appointment</title></head>
+<body>
+<h2>Book Appointment</h2>
+<form method="POST">
+    Doctor:
+    <select name="doctor_id">
+    <?php while($d = $doctors->fetch_assoc()){ ?>
+        <option value="<?php echo $d['doctor_id']; ?>"><?php echo $d['name'].' - '.$d['specialty']; ?></option>
+    <?php } ?>
+    </select><br>
+    Date: <input type="date" name="date" required><br>
+    Time: <input type="time" name="time" required><br>
+    <input type="submit" name="book" value="Book">
+</form>
+<?php if(isset($msg)) echo "<p>$msg</p>"; ?>
+
+<h3>Appointments</h3>
+<table border="1">
+<tr><th>Doctor</th><th>Date</th><th>Time</th><th>Status</th></tr>
+<?php while($a=$appointments->fetch_assoc()){ ?>
+<tr>
+<td><?php echo $a['doctor_name']; ?></td>
+<td><?php echo $a['date']; ?></td>
+<td><?php echo $a['time']; ?></td>
+<td><?php echo $a['status']; ?></td>
+</tr>
+<?php } ?>
+</table>
+</body>
+</html>

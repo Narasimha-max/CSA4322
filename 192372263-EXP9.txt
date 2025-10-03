@@ -1,0 +1,81 @@
+DATABASE:1
+CREATE DATABASE techsavvy_db;
+USE techsavvy_db;
+
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50),
+    password VARCHAR(255),
+    email VARCHAR(100)
+);
+
+CREATE TABLE categories (
+    category_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50)
+);
+
+CREATE TABLE products (
+    product_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100),
+    category_id INT,
+    price DECIMAL(10,2),
+    description TEXT,
+    stock INT,
+    FOREIGN KEY(category_id) REFERENCES categories(category_id)
+);
+
+CREATE TABLE cart (
+    cart_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    product_id INT,
+    quantity INT,
+    FOREIGN KEY(user_id) REFERENCES users(user_id),
+    FOREIGN KEY(product_id) REFERENCES products(product_id)
+);
+
+shopping.php
+<?php
+$conn = new mysqli("localhost","root","","techsavvy_db");
+if($conn->connect_error){ die("DB Connection failed: ".$conn->connect_error); }
+
+// Example user
+$user_id = 1;
+
+// Add to cart
+if(isset($_POST['add_cart'])){
+    $product_id = $_POST['product_id'];
+    $quantity = $_POST['quantity'];
+    $conn->query("INSERT INTO cart(user_id, product_id, quantity) VALUES($user_id,$product_id,$quantity)");
+    $msg = "Added to cart!";
+}
+
+// Fetch products
+$products = $conn->query("SELECT p.*, c.name as category FROM products p JOIN categories c ON p.category_id=c.category_id");
+?>
+<!DOCTYPE html>
+<html>
+<head><title>TechSavvy Electronics</title></head>
+<body>
+<h2>Electronics Shop</h2>
+<?php if(isset($msg)) echo "<p>$msg</p>"; ?>
+<table border="1">
+<tr><th>Name</th><th>Category</th><th>Price</th><th>Description</th><th>Stock</th><th>Action</th></tr>
+<?php while($p=$products->fetch_assoc()){ ?>
+<tr>
+<td><?php echo $p['name']; ?></td>
+<td><?php echo $p['category']; ?></td>
+<td><?php echo $p['price']; ?></td>
+<td><?php echo $p['description']; ?></td>
+<td><?php echo $p['stock']; ?></td>
+<td>
+<form method="POST">
+<input type="hidden" name="product_id" value="<?php echo $p['product_id']; ?>">
+Qty: <input type="number" name="quantity" min="1" max="<?php echo $p['stock']; ?>" required>
+<input type="submit" name="add_cart" value="Add to Cart">
+</form>
+</td>
+</tr>
+<?php } ?>
+</table>
+</body>
+</html>

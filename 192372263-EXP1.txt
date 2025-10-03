@@ -1,0 +1,83 @@
+DATABASE:
+CREATE DATABASE library_db;
+
+USE library_db;
+
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50) NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    email VARCHAR(100)
+);
+
+CREATE TABLE books (
+    book_id INT AUTO_INCREMENT PRIMARY KEY,
+    title VARCHAR(100),
+    author VARCHAR(50),
+    year INT,
+    semester INT,
+    available INT DEFAULT 1
+);
+
+CREATE TABLE borrow_history (
+    borrow_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    book_id INT,
+    issue_date DATE,
+    return_date DATE,
+    fine DECIMAL(5,2),
+    FOREIGN KEY (user_id) REFERENCES users(user_id),
+    FOREIGN KEY (book_id) REFERENCES books(book_id)
+);
+library.php
+
+<?php
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "library_db";
+
+// Connect to database
+$conn = new mysqli($servername, $username, $password, $dbname);
+if ($conn->connect_error) { die("Connection failed: " . $conn->connect_error); }
+
+// Handle book search
+$books = [];
+if(isset($_GET['search'])) {
+    $keyword = $_GET['keyword'];
+    $sql = "SELECT * FROM books WHERE title LIKE '%$keyword%' OR author LIKE '%$keyword%'";
+    $result = $conn->query($sql);
+    if($result->num_rows > 0){
+        while($row = $result->fetch_assoc()){
+            $books[] = $row;
+        }
+    }
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Library System</title>
+</head>
+<body>
+<h2>Search Books</h2>
+<form method="GET">
+    <input type="text" name="keyword" placeholder="Enter title or author" required>
+    <input type="submit" name="search" value="Search">
+</form>
+
+<h3>Results:</h3>
+<table border="1">
+<tr><th>Title</th><th>Author</th><th>Year</th><th>Semester</th><th>Available</th></tr>
+<?php foreach($books as $b){ ?>
+<tr>
+<td><?php echo $b['title']; ?></td>
+<td><?php echo $b['author']; ?></td>
+<td><?php echo $b['year']; ?></td>
+<td><?php echo $b['semester']; ?></td>
+<td><?php echo $b['available'] ? 'Yes':'No'; ?></td>
+</tr>
+<?php } ?>
+</table>
+</body>
+</html>

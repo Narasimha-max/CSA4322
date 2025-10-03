@@ -1,0 +1,68 @@
+DATABASE:
+CREATE DATABASE hotel_db;
+
+USE hotel_db;
+
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50),
+    password VARCHAR(255),
+    email VARCHAR(100)
+);
+
+CREATE TABLE rooms (
+    room_id INT AUTO_INCREMENT PRIMARY KEY,
+    room_type VARCHAR(50),
+    price DECIMAL(10,2),
+    availability INT
+);
+
+CREATE TABLE bookings (
+    booking_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    room_id INT,
+    check_in DATE,
+    check_out DATE,
+    FOREIGN KEY(user_id) REFERENCES users(user_id),
+    FOREIGN KEY(room_id) REFERENCES rooms(room_id)
+);
+HOTEL.php:
+<?php
+$conn = new mysqli("localhost","root","","hotel_db");
+if($conn->connect_error){ die("DB connection failed: ".$conn->connect_error); }
+
+$rooms = [];
+if(isset($_GET['search'])){
+    $check_in = $_GET['check_in'];
+    $check_out = $_GET['check_out'];
+    $sql = "SELECT * FROM rooms WHERE availability=1";
+    $result = $conn->query($sql);
+    if($result->num_rows>0){
+        while($r = $result->fetch_assoc()){ $rooms[] = $r; }
+    }
+}
+?>
+<!DOCTYPE html>
+<html>
+<head><title>Hotel Booking</title></head>
+<body>
+<h2>Check Room Availability</h2>
+<form method="GET">
+Check-in: <input type="date" name="check_in" required>
+Check-out: <input type="date" name="check_out" required>
+<input type="submit" name="search" value="Search">
+</form>
+
+<h3>Available Rooms</h3>
+<table border="1">
+<tr><th>Type</th><th>Price</th><th>Status</th></tr>
+<?php foreach($rooms as $r){ ?>
+<tr>
+<td><?php echo $r['room_type']; ?></td>
+<td><?php echo $r['price']; ?></td>
+<td><?php echo $r['availability']?'Available':'Booked'; ?></td>
+</tr>
+<?php } ?>
+</table>
+</body>
+</html>

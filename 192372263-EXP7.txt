@@ -1,0 +1,81 @@
+DATABASE:
+CREATE DATABASE beauty_db;
+USE beauty_db;
+
+CREATE TABLE users (
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(50),
+    password VARCHAR(255),
+    email VARCHAR(100)
+);
+
+CREATE TABLE stylists (
+    stylist_id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(50),
+    specialty VARCHAR(100)
+);
+
+CREATE TABLE appointments (
+    appointment_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT,
+    stylist_id INT,
+    service VARCHAR(100),
+    date DATE,
+    time TIME,
+    status VARCHAR(20) DEFAULT 'Pending',
+    FOREIGN KEY(user_id) REFERENCES users(user_id),
+    FOREIGN KEY(stylist_id) REFERENCES stylists(stylist_id)
+);
+BEUTY.php
+<?php
+$conn = new mysqli("localhost","root","","beauty_db");
+if($conn->connect_error){ die("DB connection failed: ".$conn->connect_error); }
+
+// Handle appointment booking
+$stylists = $conn->query("SELECT * FROM stylists");
+if(isset($_POST['book'])){
+    $user_id = 1; // example user
+    $stylist_id = $_POST['stylist_id'];
+    $service = $_POST['service'];
+    $date = $_POST['date'];
+    $time = $_POST['time'];
+    $conn->query("INSERT INTO appointments(user_id, stylist_id, service, date, time) VALUES($user_id,$stylist_id,'$service','$date','$time')");
+    $msg = "Appointment booked!";
+}
+
+// Show upcoming appointments
+$appointments = $conn->query("SELECT a.*, s.name as stylist_name FROM appointments a JOIN stylists s ON a.stylist_id=s.stylist_id");
+?>
+<!DOCTYPE html>
+<html>
+<head><title>Beauty Parlour Booking</title></head>
+<body>
+<h2>Book Appointment</h2>
+<form method="POST">
+    Service: <input type="text" name="service" required><br>
+    Stylist:
+    <select name="stylist_id">
+    <?php while($s = $stylists->fetch_assoc()){ ?>
+        <option value="<?php echo $s['stylist_id']; ?>"><?php echo $s['name'].' - '.$s['specialty']; ?></option>
+    <?php } ?>
+    </select><br>
+    Date: <input type="date" name="date" required><br>
+    Time: <input type="time" name="time" required><br>
+    <input type="submit" name="book" value="Book">
+</form>
+<?php if(isset($msg)) echo "<p>$msg</p>"; ?>
+<h3>Appointments</h3>
+<table border="1">
+<tr><th>Service</th><th>Stylist</th><th>Date</th><th>Time</th><th>Status</th></tr>
+<?php while($a=$appointments->fetch_assoc()){ ?>
+<tr>
+<td><?php echo $a['service']; ?></td>
+<td><?php echo $a['stylist_name']; ?></td>
+<td><?php echo $a['date']; ?></td>
+<td><?php echo $a['time']; ?></td>
+<td><?php echo $a['status']; ?></td>
+</tr>
+<?php } ?>
+</table>
+</body>
+</html>
